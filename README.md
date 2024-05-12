@@ -5,6 +5,17 @@ run
 ```
 npm install 
 ```
+in the terminal to install all server dependencies
+Step 2 :
+
+install client dependencies
+
+```
+cd client
+```
+```
+npm install 
+```
 in the terminal to install all the dependencies
 
 Step 2 :
@@ -18,7 +29,7 @@ to start the mongodb server
 
 Step 3 :
 
-Then run 
+Then in the main directory run 
 
 ```
 nodemon server.js
