@@ -4,7 +4,8 @@ mongodb should be installed
 if mongo db is not installed then comment out the mongodb code in the server.js file and also in the react front end.
 
 if mongodb is installed start the mongodb server - 
-cm - 
+
+cmd - 
 
 ```
 mongod
