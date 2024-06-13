@@ -12,20 +12,25 @@ const App = () => {
   const [courseRatings,setCourseRatings] = useState();
   useEffect(() => {
     getCourseRatings();
-    getCourseLikes();
+    // getCourseLikes();
   }, []);
   async function getCourseRatings() {
     let res = await fetch("/getCourseRatings");
     let data = await res.json();
+    console.log(data);
+    if(data.length!==0){
+      User.addCourseRatings(data[0].ratings);
+    }
     // console.log(data);
     // setCourseRatings(data[0].ratings);
-    User.addCourseRatings(data[0].ratings);
     // User.addCourseRatings(data.ratings);
   }
   async function getCourseLikes() {
     let res = await fetch("/getCourseLikes");
     let data = await res.json();
-    User.addCourseLikes(data[0].ratings);
+    if(data.length!==0){
+      User.addCourseLikes(data[0].ratings);
+    }
   }
   // useEffect(()=>{
   //   if(courseRatings){

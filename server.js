@@ -49,25 +49,25 @@ const courseSchema = new mongoose.Schema({
 
 const Course = mongoose.model("Course", courseSchema);
 
-let course1 = new Like({
+let course1 = new Rating({
     courseId: 1,
-    likes: 2
+    rating: 2
 });
-let course2 = new Like({
+let course2 = new Rating({
     courseId: 2,
-    likes: 4
+    rating: 4
 });
-let course3 = new Like({
+let course3 = new Rating({
     courseId: 3,
-    likes: 5
+    rating: 5
 });
-let course4 = new Like({
+let course4 = new Rating({
     courseId: 4,
-    likes: 3
+    rating: 3
 });
-let course5 = new Like({
+let course5 = new Rating({
     courseId: 5,
-    likes: 6
+    rating: 4
 });
 // course1.save();
 // course2.save();
@@ -95,7 +95,7 @@ const UserLike = mongoose.model("UserLike", userLikeSchema);
 const userSchema = new mongoose.Schema({
     userId: {
         type: Number,
-        required: [true, "courseId required "]
+        required: [true, "userId required "]
     },
     ratings: [ratingsSchema]
 });
@@ -103,27 +103,39 @@ const userSchema = new mongoose.Schema({
 const User = mongoose.model("User", userSchema);
 
 let userrating = new Like({
-    courseId:3,
-    likes:1
+    courseId: 3,
+    likes: 1
 });
 let userrating2 = new Like({
-    courseId:5,
-    likes:1
+    courseId: 5,
+    likes: 1
 });
 // userrating.save();
 
 let user = new UserLike({
-    userId:102,
-    ratings:[userrating,userrating2]
+    userId: 102,
+    ratings: [userrating, userrating2]
 })
 // console.log(user);
 // user.save();
 
 async function getCourses() {
     let course = await Course.find({});
-    // console.log(course);
-    return course;
+    // console.log(course[0].ratings);
+    if(course.length===0){
+        let newCourses = new Course({
+            ratings: [ 
+                course1,course2,course3,course4,course5
+            ]
+        })
+        newCourses.save();
+        let course = await Course.find({});
+        return course;
+    }else{
+        return course;
+    }
 }
+//  getCourses()
 
 async function getCoursesLikes() {
     let course = await CourseLike.find({});
@@ -134,57 +146,113 @@ async function getCoursesLikes() {
 
 async function getUser(id) {
     let user = await User.findOne({ userId: id }).exec();
-    return user;
+    if (user) {
+        return user;
+    } else {
+        let newUser = new User({
+            userId: id,
+            ratings: []
+        })
+        newUser.save();
+        return newUser;
+    }
 }
 // getUser();
 
 async function getUserLikes(id) {
     let user = await User.findOne({ userId: id }).exec();
-    return user;
+    if (user) {
+        return user;
+    } else {
+
+    }
 }
 // getUserLikes();
 
 async function findCourseAndUpdate(id, newRating) {
-    let data = await Course.findOne({ _id: "663e2d595df6c6f107b797b7" });
-    let courses = data.ratings;
-    // console.log(courses);
-    courses.forEach((ele) => {
-        if (ele.courseId === id) {
-            console.log(ele);
-            ele.rating = newRating;
+    let data = await Course.find({});
+    let found = false;
+    // console.log("data");
+    // console.log(data);
+    if (data) {
+        let courses = data[0].ratings;
+        courses.forEach((ele) => {
+            if (ele.courseId === id) {
+                // console.log(ele);
+                found = true;
+                ele.rating = newRating;
+            }
+        })
+        if(!found){
+            let newCourseRating = new Rating({
+                courseId:id,
+                rating:newRating
+            });
+            courses.push(newCourseRating);
         }
-    })
-    data.ratings = courses;
-    data.save();
-    // console.log(JSON.stringify(data));
-    return true;
+        data[0].ratings = courses;
+        await data[0].save();
+        // console.log(JSON.stringify(data));
+        return true;
+
+    } else {
+        let course = new Rating({
+            courseId: id,
+            rating: newRating
+        });
+
+        let data = new Course({
+            ratings: [
+                course
+            ]
+        })
+
+        data.save();
+        return true;
+    }
+
 }
 // findCourseAndUpdate(5,3);
 
 async function findUserAndUpdate(id, courseId, newRating) {
     let data = await User.findOne({ userId: id });
-    let userRatingsArr = data.ratings;
-    let found = false;
-    userRatingsArr.forEach((ele) => {
-        if (ele.courseId === courseId) {
-            // console.log(ele);
-            found = true;
-            ele.rating = newRating;
+    if (data) {
+        let userRatingsArr = data.ratings;
+        let found = false;
+        userRatingsArr.forEach((ele) => {
+            if (ele.courseId === courseId) {
+                // console.log(ele);
+                found = true;
+                ele.rating = newRating;
+            }
+        });
+        if (found) {
+            data.ratings = userRatingsArr;
+        } else {
+            let newUserRating = new Rating({
+                courseId: courseId,
+                rating: newRating
+            });
+            userRatingsArr.push(newUserRating);
+            data.ratings = userRatingsArr;
         }
-    });
-    if (found) {
-        data.ratings = userRatingsArr;
+        data.save();
+        // console.log(JSON.stringify(data));
+        return true;
     } else {
-        let newUserRating = new Rating({
+        let courseRating = new Rating({
             courseId: courseId,
             rating: newRating
-        });
-        userRatingsArr.push(newUserRating);
-        data.ratings = userRatingsArr;
+        })
+        let newUser = new User({
+            userId: id,
+            ratings: [
+                courseRating
+            ]
+        })
+        newUser.save();
+        return true;
     }
-    data.save();
-    // console.log(JSON.stringify(data));
-    return true;
 }
 // findUserAndUpdate(101, 2, 4);
 
@@ -224,22 +292,22 @@ app.post("/getUserLikes", async function (req, res) {
 
 
 
-app.post("/updateRatings",async function(req,res){
+app.post("/updateRatings", async function (req, res) {
     let output;
     let data = req.body;
-    let userId= data.userId;
-    let courseId= data.courseId;
-    let newCourseRating= data.newCourseRating;
-    let newUserRating= data.newUserRating;
-    let resp = await findUserAndUpdate(userId,courseId,newUserRating) && await findCourseAndUpdate(courseId,newCourseRating);
-    if(resp){
+    let userId = data.userId;
+    let courseId = data.courseId;
+    let newCourseRating = data.newCourseRating;
+    let newUserRating = data.newUserRating;
+    let resp = await findUserAndUpdate(userId, courseId, newUserRating) && await findCourseAndUpdate(courseId, newCourseRating);
+    if (resp) {
         // console.log("yes");
         let courses = await getCourses();
         let user = await getUser(userId);
         output = {
-            userRatings:user.ratings,
-            courseRatings:courses[0].ratings
-        }; 
+            userRatings: user.ratings,
+            courseRatings: courses[0].ratings
+        };
     }
     res.send(JSON.stringify(output));
 
